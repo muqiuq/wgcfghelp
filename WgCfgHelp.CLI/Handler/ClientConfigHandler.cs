@@ -1,9 +1,12 @@
-﻿using System;
+﻿using QRCoder;
+using SixLabors.ImageSharp;
+using System;
 using System.Collections.Generic;
 using System.CommandLine;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using SixLabors.ImageSharp.Formats;
 using WgCfgHelp.CLI.Models;
 using WgCfgHelp.Lib;
 
@@ -17,26 +20,31 @@ namespace WgCfgHelp.CLI.Handler
             var addressArg = new Argument<string>("address", "address for the client");
 
             var presharedKeyOption = new Option<bool>(new string[]{"-p", "--preshared" }, "generate preshared key");
-            var outputToFileOption = new Option<string>(new string[] { "-o", "--output" }, "output to file instead of std");
+            var outputToFileOption = new Option<bool>(new string[] { "-o", "--to-file" }, "output to file instead of std");
+            var qrCodeOption = new Option<bool>(new string[] { "-q", "--qrcode" }, "generate qrcode");
             var forceOption = new Option<bool>("-f", "force writing files");
+            var basePathOption =
+                new Option<string>(new string[] { "-b", "--basepath" }, "write all files in this path");
 
             var command = new Command("gen-client", "generate client access file");
             command.AddArgument(configArg);
             command.AddArgument(addressArg);
             command.AddOption(presharedKeyOption);
+            command.AddOption(qrCodeOption);
+            command.AddOption(basePathOption);
             command.AddOption(outputToFileOption);
             command.AddOption(forceOption);
 
-            command.SetHandler(async (config, address, presharedKey, outputToFile, force) =>
+            command.SetHandler(async (config, address, presharedKey, outputToFile, force, qrCode, basePath) =>
             {
-                await handle(config, address, presharedKey, outputToFile, force);
-            }, configArg, addressArg, presharedKeyOption, outputToFileOption, forceOption);
+                await handle(config, address, presharedKey, outputToFile, force, qrCode, basePath);
+            }, configArg, addressArg, presharedKeyOption, outputToFileOption, forceOption, qrCodeOption, basePathOption);
 
             return command;
 
         }
 
-        private async Task handle(string config, string address, bool presharedKey, string outputToFile, bool force)
+        private async Task handle(string config, string address, bool presharedKey, bool outputToFile, bool force, bool genQrCode, string basePath)
         {
             if (!File.Exists(config))
             {
@@ -52,18 +60,51 @@ namespace WgCfgHelp.CLI.Handler
                 configFile.Dns,
                 presharedKey);
 
-            if (!string.IsNullOrWhiteSpace(outputToFile))
+            var cleanAddress = address.Replace("/", "_");
+
+            if (!string.IsNullOrWhiteSpace(basePath))
             {
-                if (File.Exists(outputToFile) && !force)
+                if (!Directory.Exists(basePath))
                 {
-                    Console.WriteLine($"file {outputToFile} already exists");
+                    Console.WriteLine("Output folder does not exist");
                     return;
                 }
-                await File.WriteAllTextAsync(outputToFile, clientConfig.ToConfigFileFormat());
+            }
+            else
+            {
+                basePath = "";
+            }
+
+            var filenameConf = Path.Combine(basePath, $"{cleanAddress}.conf");
+            var filenamePic = Path.Combine(basePath, $"{cleanAddress}.png");
+
+            if (outputToFile)
+            {
+                if (File.Exists(filenameConf) && !force)
+                {
+                    Console.WriteLine($"file {filenameConf} already exists");
+                    return;
+                }
+                await File.WriteAllTextAsync(filenameConf, clientConfig.ToConfigFileFormat());
             }
             else
             {
                 Console.WriteLine(clientConfig.ToConfigFileFormat());
+            }
+
+            if (genQrCode)
+            {
+                QRCodeGenerator qrGenerator = new QRCodeGenerator();
+                QRCodeData qrCodeData = qrGenerator.CreateQrCode(clientConfig.ToConfigFileFormat(), QRCodeGenerator.ECCLevel.Q);
+                var qrCode = new QRCode(qrCodeData);
+                var image = qrCode.GetGraphic(20);
+                if (File.Exists(filenamePic) && !force)
+                {
+                    Console.WriteLine($"file {filenamePic} already exists");
+                    return;
+                }
+
+                await image.SaveAsync(filenamePic);
             }
         }
     }
