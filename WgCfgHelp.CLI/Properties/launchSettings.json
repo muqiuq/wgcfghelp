@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "WgCfgHelp.CLI": {
+      "commandName": "Project",
+      "commandLineArgs": "gen-client help"
+    }
+  }
+}
