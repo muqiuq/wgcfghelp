@@ -41,6 +41,19 @@ namespace WgCfgHelp.Lib
             return wgConfig;
         }
 
+        public static WgKeyPair GenKeyPair()
+        {
+            var wgExeInt = WgExeInterface.Create();
+            var privateKey = wgExeInt.GenPrivateKey();
+            var publicKey = wgExeInt.GenPublicKey(privateKey);
+            return new WgKeyPair()
+            {
+                PrivateKey = privateKey,
+                PublicKey = publicKey
+            };
+
+        }
+
 
     }
 }

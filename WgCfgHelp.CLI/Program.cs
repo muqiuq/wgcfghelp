@@ -10,11 +10,11 @@ namespace WgCfgHelp.CLI
     {
         static int Main(string[] args)
         {
-            var genClient = new ClientConfigHandler();
-            
+
             var rootCommand = new RootCommand("WireGuard Config Helper")
             {
-                genClient.GetCommand()
+                (new SiteConfigGenHandler()).GetCommand(),
+                (new ClientConfigHandler()).GetCommand()
             };
 
             return rootCommand.InvokeAsync(args).Result;
