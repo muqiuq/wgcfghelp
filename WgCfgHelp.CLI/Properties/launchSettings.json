@@ -2,7 +2,7 @@
   "profiles": {
     "WgCfgHelp.CLI": {
       "commandName": "Project",
-      "commandLineArgs": "gen-client help"
+      "commandLineArgs": "gen-client -p -n 5 site-config.example.yaml 192.168.10.5"
     }
   }
 }

@@ -9,6 +9,8 @@ using System.Threading.Tasks;
 using SixLabors.ImageSharp.Formats;
 using WgCfgHelp.CLI.Models;
 using WgCfgHelp.Lib;
+using WgCfgHelp.Lib.IPHelpers;
+using System.Net;
 
 namespace WgCfgHelp.CLI.Handler
 {
@@ -21,6 +23,8 @@ namespace WgCfgHelp.CLI.Handler
 
             var presharedKeyOption = new Option<bool>(new string[]{"-p", "--preshared" }, "generate preshared key");
             var outputToFileOption = new Option<bool>(new string[] { "-o", "--to-file" }, "output to file instead of std");
+            var numOfClients =
+                new Option<int>(new string[] { "-n" }, () => 1, "number of client access files to generate");
             var qrCodeOption = new Option<bool>(new string[] { "-q", "--qrcode" }, "generate qrcode");
             var forceOption = new Option<bool>("-f", "force writing files");
             var basePathOption =
@@ -29,22 +33,30 @@ namespace WgCfgHelp.CLI.Handler
             var command = new Command("gen-client", "generate client access file");
             command.AddArgument(configArg);
             command.AddArgument(addressArg);
+            command.AddOption(numOfClients);
             command.AddOption(presharedKeyOption);
             command.AddOption(qrCodeOption);
             command.AddOption(basePathOption);
             command.AddOption(outputToFileOption);
             command.AddOption(forceOption);
 
-            command.SetHandler(async (config, address, presharedKey, outputToFile, force, qrCode, basePath) =>
+            command.SetHandler(async (config, address, presharedKey, outputToFile, force, qrCode, basePath, numOfClients) =>
             {
-                await handle(config, address, presharedKey, outputToFile, force, qrCode, basePath);
-            }, configArg, addressArg, presharedKeyOption, outputToFileOption, forceOption, qrCodeOption, basePathOption);
+                await handle(config, address, presharedKey, outputToFile, force, qrCode, basePath, numOfClients);
+            }, configArg, addressArg, presharedKeyOption, outputToFileOption, forceOption, qrCodeOption, basePathOption, numOfClients);
 
             return command;
 
         }
 
-        private async Task handle(string config, string address, bool presharedKey, bool outputToFile, bool force, bool genQrCode, string basePath)
+        private async Task handle(string config, 
+            string addressStr, 
+            bool presharedKey, 
+            bool outputToFile, 
+            bool force, 
+            bool genQrCode, 
+            string basePath, 
+            int numOfClients)
         {
             if (!File.Exists(config))
             {
@@ -53,12 +65,71 @@ namespace WgCfgHelp.CLI.Handler
             }
             var configFile = SiteConfigFile.LoadFromFile(config);
 
-            var clientConfig = WgConfigFactory.GenClientConfig(address,
+            if (configFile.AllowedIPs == null)
+            {
+                Console.WriteLine("Missing required parameter 'allowedIPs' in site config");
+                return;
+            }
+
+            var allowedIpsList = configFile.AllowedIPs!.Split(",").Select(x => x.Trim()).ToList();
+
+            if (!IPAddress.TryParse(addressStr, out var ipAddr))
+            {
+                Console.WriteLine($"Could not parse IP Address {addressStr}");
+                return;
+            }
+
+            if (!IpHelper.IsPartOfNetwork(ipAddr, allowedIpsList, out var network))
+            {
+                Console.WriteLine($"{addressStr} is not part of any network in {configFile.AllowedIPs}");
+                return;
+            }
+
+            var lastIpAddr = IpHelper.GetNextIpAddress(ipAddr, (uint)numOfClients-1);
+
+            if (network.Netmask.Equals(ipAddr) || network.Broadcast.Equals(ipAddr))
+            {
+                Console.WriteLine($"Start address {ipAddr} cannot equal network or broadcast address.");
+                return;
+            }
+
+            if (!network.Contains(lastIpAddr))
+            {
+                Console.WriteLine($"Last ip address ({lastIpAddr}) is outside of network {network}");
+                return;
+            }
+
+            if (network.Netmask.Equals(lastIpAddr) || network.Broadcast.Equals(lastIpAddr))
+            {
+                Console.WriteLine($"Last address {lastIpAddr} cannot equal network or broadcast address.");
+                return;
+            }
+
+            for (int a = 0; a < numOfClients; a++)
+            {
+                var ipAddrForClient = IpHelper.GetNextIpAddress(ipAddr, (uint)a);
+                await GenerateClientAccessFile(configFile, ipAddrForClient.ToString(), presharedKey, outputToFile, force, genQrCode, basePath,
+                    network);
+            }
+
+        }
+
+        private static async Task GenerateClientAccessFile(SiteConfigFile configFile,
+            string address,
+            bool presharedKey,
+            bool outputToFile,
+            bool force,
+            bool genQrCode,
+            string basePath,
+            IPNetwork2 network)
+        {
+
+            var clientConfig = WgConfigFactory.GenClientConfig($"{address}/{network.Cidr}",
                 configFile.PublicKey!,
                 configFile.Endpoint!,
                 configFile.AllowedIPs!,
                 configFile.Dns,
-                presharedKey);
+            presharedKey);
 
             var cleanAddress = address.Replace("/", "_");
 

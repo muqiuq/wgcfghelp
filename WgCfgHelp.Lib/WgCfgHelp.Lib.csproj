@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="IPNetwork2" Version="3.0.667" />
+  </ItemGroup>
+
 </Project>
