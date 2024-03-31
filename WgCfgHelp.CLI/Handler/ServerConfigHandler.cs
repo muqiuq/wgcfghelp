@@ -49,15 +49,12 @@ namespace WgCfgHelp.CLI.Handler
             command.AddOption(forceOption);
 
             command.Handler = CommandHandler.Create(
-                async (ServerConfigArgs args) =>
-                {
-                    await handle(args);
-                });
+                (ServerConfigArgs args) => handle(args));
 
             return command;
         }
 
-        private async Task<int> handle(ServerConfigArgs args)
+        private int handle(ServerConfigArgs args)
         {
             if (!File.Exists(args.ConfigFileName))
             {
@@ -85,10 +82,10 @@ namespace WgCfgHelp.CLI.Handler
                 return CliErrorCodes.MISSING_PRIVATE_KEY;
             }
             
-            return await GenerateServerAccessFile(configFile, $"{ipAddr}/{network!.Cidr}", args, network!);
+            return GenerateServerAccessFile(configFile, $"{ipAddr}/{network!.Cidr}", args, network!);
         }
 
-        private static async Task<int> GenerateServerAccessFile(SiteConfigFile configFile,
+        private static int GenerateServerAccessFile(SiteConfigFile configFile,
             string address,
             ServerConfigArgs args,
             IPNetwork2 network)

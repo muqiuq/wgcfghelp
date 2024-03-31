@@ -28,16 +28,13 @@ namespace WgCfgHelp.CLI.Handler
             command.AddOption(forceOption);
             
 
-            command.SetHandler(async (configFilePath, allowedIpsStr, endpoint, dns, forceOption) =>
-            {
-                await handle(configFilePath, allowedIpsStr, endpoint, dns, forceOption);
-            }, configArg, allowedIpsArg, endpointArg, dnsOption, forceOption);
+            command.SetHandler(handle, configArg, allowedIpsArg, endpointArg, dnsOption, forceOption);
 
             return command;
 
         }
 
-        private async Task handle(string configFilePath, string allowedIpsStr, string endpoint, string dns,
+        private void handle(string configFilePath, string allowedIpsStr, string endpoint, string dns,
             bool forceOption)
         {
             var keyPair = WgConfigFactory.GenKeyPair();

@@ -96,10 +96,10 @@ namespace WgCfgHelp.CLI.Handler
 
             for (int a = 0; a < args.NumOfClients; a++)
             {
-                var ipAddrForClient = IpHelper.GetNextIpAddress(ipAddr, (uint)a);
+                var ipAddrForClient = IpHelper.GetNextIpAddress(ipAddr!, (uint)a);
                 var errorCodeSub = await GenerateClientAccessFile(configFile, ipAddrForClient.ToString(), 
                     args.Preshared, args.ToFile, args.Force, args.QrCode, args.BasePath,
-                    network);
+                    network!);
                 if (errorCodeSub != CliErrorCodes.SUCCESS)
                 {
                     return errorCodeSub;
