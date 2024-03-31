@@ -3,11 +3,10 @@
 
 name: .NET
 
-on:
+on:  
   push:
-    branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
+    tags:
+      - '*'
 
 jobs:
   build:
@@ -26,3 +25,33 @@ jobs:
       run: dotnet build --no-restore
     - name: Test
       run: dotnet test --no-build --verbosity normal
+    - name: "Build win-x64"
+      run: 'dotnet publish -p:PublishSingleFile=true -p:JsonSerializerIsReflectionEnabledByDefault=true --self-contained --runtime win-x64 -o cli-win-x64 WgCfgHelp.CLI/WgCfgHelp.CLI.csproj'
+    - name: "Rename win-x64"
+      run: 'mv cli-win-x64/WgCfgHelp.CLI.exe WgCfgHelp.CLI.x64.exe'
+    - name: "Build win-arm64"
+      run: 'dotnet publish -p:PublishSingleFile=true -p:JsonSerializerIsReflectionEnabledByDefault=true --self-contained --runtime win-arm64 -o cli-win-arm64 WgCfgHelp.CLI/WgCfgHelp.CLI.csproj'      
+    - name: "Rename win-arm64"
+      run: 'mv cli-win-arm64/WgCfgHelp.CLI.exe WgCfgHelp.CLI.arm64.exe'
+    - name: "Build cli-osx-x64"
+      run: 'dotnet publish -p:PublishSingleFile=true -p:JsonSerializerIsReflectionEnabledByDefault=true --self-contained --runtime osx-x64 -o cli-osx-x64 WgCfgHelp.CLI/WgCfgHelp.CLI.csproj'
+    - name: "Rename cli-osx-x64"
+      run: 'mv cli-osx-x64/WgCfgHelp.CLI WgCfgHelp.CLI.osx-x64'      
+    - name: "Build cli-linux-x64"
+      run: 'dotnet publish -p:PublishSingleFile=true -p:JsonSerializerIsReflectionEnabledByDefault=true --self-contained --runtime linux-x64 -o cli-linux-x64 WgCfgHelp.CLI/WgCfgHelp.CLI.csproj'
+    - name: "Rename cli-linux-x64"
+      run: 'mv cli-linux-x64/WgCfgHelp.CLI WgCfgHelp.CLI.linux-x64'
+    - name: "Build cli-linux-arm64"
+      run: 'dotnet publish -p:PublishSingleFile=true -p:JsonSerializerIsReflectionEnabledByDefault=true --self-contained --runtime linux-arm64 -o cli-linux-arm64 WgCfgHelp.CLI/WgCfgHelp.CLI.csproj'
+    - name: "Rename cli-linux-arm64"
+      run: 'mv cli-linux-arm64/WgCfgHelp.CLI WgCfgHelp.CLI.linux-arm64'
+    - name: Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          WgCfgHelp.CLI.x64.exe
+          WgCfgHelp.CLI.arm64.exe
+          WgCfgHelp.CLI.osx-x64
+          WgCfgHelp.CLI.linux-x64
+          WgCfgHelp.CLI.linux-arm64
+    
