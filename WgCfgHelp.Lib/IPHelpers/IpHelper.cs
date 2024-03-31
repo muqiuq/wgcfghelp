@@ -10,6 +10,19 @@ namespace WgCfgHelp.Lib.IPHelpers
     public static class IpHelper
     {
 
+        public static string ReplaceOrAddCidr(string ipAddrStr, int newCidr)
+        {
+            if (ipAddrStr.Contains("/"))
+            {
+                if(!IPNetwork2.TryParse(ipAddrStr, out var subnet))
+                {
+                    throw new IpHelperException($"Could not parse {ipAddrStr}");
+                }
+            }
+            string ipAddrStrWithoutCidr = ipAddrStr.Split('/')[0];
+            return $"{ipAddrStrWithoutCidr}/{newCidr}";
+        }
+        
         public static bool IsPartOfNetwork(IPAddress ipAddr, List<string> listOfSubnets, out IPNetwork2 network)
         {
             network = null;

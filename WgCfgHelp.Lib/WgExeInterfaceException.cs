@@ -13,10 +13,6 @@ namespace WgCfgHelp.Lib
         {
         }
 
-        protected WgExeInterfaceException(SerializationInfo info, StreamingContext context) : base(info, context)
-        {
-        }
-
         public WgExeInterfaceException(string? message) : base(message)
         {
         }

@@ -14,10 +14,13 @@ namespace WgCfgHelp.CLI
             var rootCommand = new RootCommand("WireGuard Config Helper")
             {
                 (new SiteConfigGenHandler()).GetCommand(),
-                (new ClientConfigHandler()).GetCommand()
+                (new ClientConfigHandler()).GetCommand(),
+                (new ServerConfigHandler()).GetCommand()
             };
 
-            return rootCommand.InvokeAsync(args).Result;
+            var task = rootCommand.InvokeAsync(args);
+            task.Wait();
+            return task.Result;
         }
     }
 }

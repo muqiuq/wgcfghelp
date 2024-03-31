@@ -10,6 +10,25 @@ namespace WgCfgHelp.Lib
     public class WgConfigFactory
     {
 
+        
+        public static WgQuickConfigFile GenServerConfig(
+            string address,
+            int port,
+            string privateKey, 
+            List<WgQuickPeer> peers)
+        {
+            var wgExeInt = WgExeInterface.Create();
+            var wgConfig = new WgQuickConfigFile()
+            {
+                Address = address,
+                PrivateKey = privateKey,
+                ListenPort = port,
+            };
+            wgConfig.PublicKey = wgExeInt.GenPublicKey(wgConfig.PrivateKey);
+            wgConfig.Peers = peers;
+            return wgConfig;
+        }
+        
         public static WgQuickConfigFile GenClientConfig(
             string address,
             string publicKey, 

@@ -25,6 +25,7 @@ namespace WgCfgHelp.CLI.Handler
             command.AddArgument(allowedIpsArg);
             command.AddArgument(endpointArg);
             command.AddOption(dnsOption);
+            command.AddOption(forceOption);
             
 
             command.SetHandler(async (configFilePath, allowedIpsStr, endpoint, dns, forceOption) =>
@@ -40,13 +41,20 @@ namespace WgCfgHelp.CLI.Handler
             bool forceOption)
         {
             var keyPair = WgConfigFactory.GenKeyPair();
+            var port = 51820;
+            var endpointParts = endpoint.Split(":");
+            if (endpointParts.Length == 2 && int.TryParse(endpointParts.Last(), out var parsedPort))
+            {
+                port = parsedPort;
+            }
             var siteConfig = new SiteConfigFile()
             {
                 Endpoint = endpoint,
                 AllowedIPs = allowedIpsStr,
                 Dns = dns,
                 PublicKey = keyPair.PublicKey,
-                PrivateKey = keyPair.PrivateKey
+                PrivateKey = keyPair.PrivateKey,
+                Port = port
             };
             configFilePath = configFilePath + ".yaml";
             if (File.Exists(configFilePath) && !forceOption)

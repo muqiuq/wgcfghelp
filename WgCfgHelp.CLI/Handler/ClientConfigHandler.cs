@@ -3,6 +3,7 @@ using SixLabors.ImageSharp;
 using System;
 using System.Collections.Generic;
 using System.CommandLine;
+using System.CommandLine.NamingConventionBinder;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,6 +15,30 @@ using System.Net;
 
 namespace WgCfgHelp.CLI.Handler
 {
+    public class ClientConfigArgs
+    {
+        public string Config { get; set; }
+
+        public string ConfigFileName
+        {
+            get
+            {
+                return Config;
+            }
+        }
+
+        public string Address { get; set; }
+
+        public bool Preshared { get; set; }
+        public bool ToFile { get; set; }
+        public int NumOfClients { get; set; }
+        public bool QrCode { get; set; }
+        public bool Force { get; set; }
+        public bool DoNotUpdateSiteConfig { get; set; }
+        public string BasePath { get; set; }
+        
+    }
+    
     internal class ClientConfigHandler : IHandler
     {
         public Command GetCommand()
@@ -24,11 +49,12 @@ namespace WgCfgHelp.CLI.Handler
             var presharedKeyOption = new Option<bool>(new string[]{"-p", "--preshared" }, "generate preshared key");
             var outputToFileOption = new Option<bool>(new string[] { "-o", "--to-file" }, "output to file instead of std");
             var numOfClients =
-                new Option<int>(new string[] { "-n" }, () => 1, "number of client access files to generate");
+                new Option<int>(new string[] { "-n" , "--num-of-clients"}, () => 1, "number of client access files to generate");
             var qrCodeOption = new Option<bool>(new string[] { "-q", "--qrcode" }, "generate qrcode");
-            var forceOption = new Option<bool>("-f", "force writing files");
+            var forceOption = new Option<bool>(new string[] { "-f", "--Force" }, "force writing files");
+            var doNotUpdateSiteConfigOption = new Option<bool>(new string[] { "-d", "--do-not-update-site-config" }, () => false, "do not update site config");
             var basePathOption =
-                new Option<string>(new string[] { "-b", "--basepath" }, "write all files in this path");
+                new Option<string>(new string[] { "-b", "--base-path" }, "write all files in this path");
 
             var command = new Command("gen-client", "generate client access file");
             command.AddArgument(configArg);
@@ -39,82 +65,56 @@ namespace WgCfgHelp.CLI.Handler
             command.AddOption(basePathOption);
             command.AddOption(outputToFileOption);
             command.AddOption(forceOption);
+            command.AddOption(doNotUpdateSiteConfigOption);
 
-            command.SetHandler(async (config, address, presharedKey, outputToFile, force, qrCode, basePath, numOfClients) =>
-            {
-                await handle(config, address, presharedKey, outputToFile, force, qrCode, basePath, numOfClients);
-            }, configArg, addressArg, presharedKeyOption, outputToFileOption, forceOption, qrCodeOption, basePathOption, numOfClients);
+            command.Handler = CommandHandler.Create(
+                async (ClientConfigArgs args) =>
+                {
+                    await handle(args);
+                });
 
             return command;
 
         }
+        
+        
 
-        private async Task handle(string config, 
-            string addressStr, 
-            bool presharedKey, 
-            bool outputToFile, 
-            bool force, 
-            bool genQrCode, 
-            string basePath, 
-            int numOfClients)
+        private async Task<int> handle(ClientConfigArgs args)
         {
-            if (!File.Exists(config))
+            if (!File.Exists(args.ConfigFileName))
             {
                 Console.WriteLine("config file not found");
-                return;
+                return CliErrorCodes.CONFIG_FILE_NOT_FOUND;
             }
-            var configFile = SiteConfigFile.LoadFromFile(config);
+            var configFile = SiteConfigFile.LoadFromFile(args.ConfigFileName);
 
-            if (configFile.AllowedIPs == null)
+            if (!HandlerHelper.TryVerifyIpAddress(args.Address, configFile.AllowedIPs, args.NumOfClients,
+                    out var errorCode, out var ipAddr, out var lastIpAddr, out var network))
             {
-                Console.WriteLine("Missing required parameter 'allowedIPs' in site config");
-                return;
+                return errorCode;
             }
 
-            var allowedIpsList = configFile.AllowedIPs!.Split(",").Select(x => x.Trim()).ToList();
-
-            if (!IPAddress.TryParse(addressStr, out var ipAddr))
-            {
-                Console.WriteLine($"Could not parse IP Address {addressStr}");
-                return;
-            }
-
-            if (!IpHelper.IsPartOfNetwork(ipAddr, allowedIpsList, out var network))
-            {
-                Console.WriteLine($"{addressStr} is not part of any network in {configFile.AllowedIPs}");
-                return;
-            }
-
-            var lastIpAddr = IpHelper.GetNextIpAddress(ipAddr, (uint)numOfClients-1);
-
-            if (network.Netmask.Equals(ipAddr) || network.Broadcast.Equals(ipAddr))
-            {
-                Console.WriteLine($"Start address {ipAddr} cannot equal network or broadcast address.");
-                return;
-            }
-
-            if (!network.Contains(lastIpAddr))
-            {
-                Console.WriteLine($"Last ip address ({lastIpAddr}) is outside of network {network}");
-                return;
-            }
-
-            if (network.Netmask.Equals(lastIpAddr) || network.Broadcast.Equals(lastIpAddr))
-            {
-                Console.WriteLine($"Last address {lastIpAddr} cannot equal network or broadcast address.");
-                return;
-            }
-
-            for (int a = 0; a < numOfClients; a++)
+            for (int a = 0; a < args.NumOfClients; a++)
             {
                 var ipAddrForClient = IpHelper.GetNextIpAddress(ipAddr, (uint)a);
-                await GenerateClientAccessFile(configFile, ipAddrForClient.ToString(), presharedKey, outputToFile, force, genQrCode, basePath,
+                var errorCodeSub = await GenerateClientAccessFile(configFile, ipAddrForClient.ToString(), 
+                    args.Preshared, args.ToFile, args.Force, args.QrCode, args.BasePath,
                     network);
+                if (errorCodeSub != CliErrorCodes.SUCCESS)
+                {
+                    return errorCodeSub;
+                }
             }
 
+            if (!args.DoNotUpdateSiteConfig)
+            {
+                configFile.SaveToFile(args.ConfigFileName);
+            }
+
+            return CliErrorCodes.SUCCESS;
         }
 
-        private static async Task GenerateClientAccessFile(SiteConfigFile configFile,
+        private static async Task<int> GenerateClientAccessFile(SiteConfigFile configFile,
             string address,
             bool presharedKey,
             bool outputToFile,
@@ -123,46 +123,33 @@ namespace WgCfgHelp.CLI.Handler
             string basePath,
             IPNetwork2 network)
         {
+            var clientAddr = $"{address}/{network.Cidr}";
 
-            var clientConfig = WgConfigFactory.GenClientConfig($"{address}/{network.Cidr}",
+            var clientConfig = WgConfigFactory.GenClientConfig(clientAddr,
                 configFile.PublicKey!,
                 configFile.Endpoint!,
                 configFile.AllowedIPs!,
                 configFile.Dns,
             presharedKey);
-
-            var cleanAddress = address.Replace("/", "_");
-
-            if (!string.IsNullOrWhiteSpace(basePath))
+            
+            configFile.Peers.Add(new PeerConfig()
             {
-                if (!Directory.Exists(basePath))
-                {
-                    Console.WriteLine("Output folder does not exist");
-                    return;
-                }
-            }
-            else
-            {
-                basePath = "";
-            }
+                AllowedIPs = clientConfig.Peers.First()?.AllowedIPs,
+                Name = clientAddr,
+                Address = clientAddr,
+                PresharedKey = clientConfig.Peers.First()?.PresharedKey,
+                PublicKey = clientConfig.PublicKey,
+            });
 
-            var filenameConf = Path.Combine(basePath, $"{cleanAddress}.conf");
-            var filenamePic = Path.Combine(basePath, $"{cleanAddress}.png");
-
-            if (outputToFile)
+            if (!HandlerHelper.TrySaveToFileOrOutput(
+                    address, basePath, outputToFile, force, clientConfig.ToConfigFileFormat(), 
+                    out var errorCode, out var filePathWithoutExtension))
             {
-                if (File.Exists(filenameConf) && !force)
-                {
-                    Console.WriteLine($"file {filenameConf} already exists");
-                    return;
-                }
-                await File.WriteAllTextAsync(filenameConf, clientConfig.ToConfigFileFormat());
-            }
-            else
-            {
-                Console.WriteLine(clientConfig.ToConfigFileFormat());
+                return errorCode;
             }
 
+            var filenamePic = $"{filePathWithoutExtension!}.png";
+            
             if (genQrCode)
             {
                 QRCodeGenerator qrGenerator = new QRCodeGenerator();
@@ -172,11 +159,13 @@ namespace WgCfgHelp.CLI.Handler
                 if (File.Exists(filenamePic) && !force)
                 {
                     Console.WriteLine($"file {filenamePic} already exists");
-                    return;
+                    return CliErrorCodes.FILE_ALREADY_EXISTS;
                 }
 
                 await image.SaveAsync(filenamePic);
             }
+            
+            return CliErrorCodes.SUCCESS;
         }
     }
 }

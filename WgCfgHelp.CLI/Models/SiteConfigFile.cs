@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using WgCfgHelp.Lib.Models;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
@@ -19,7 +20,11 @@ namespace WgCfgHelp.CLI.Models
 
         public string? Endpoint { get; set; }
 
+        public int? Port { get; set; } = 51820;
+
         public string? AllowedIPs { get; set; }
+
+        public List<PeerConfig> Peers { get; set; } = new List<PeerConfig>();
 
         public static SiteConfigFile LoadFromFile(string path)
         {

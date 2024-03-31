@@ -27,8 +27,9 @@ namespace WgCfgHelp.Lib.Models
             output += $"Address = {Address}\n";
             output += $"PrivateKey = {PrivateKey}\n";
             output += $"# PublicKey = {PublicKey}\n";
-            if(!string.IsNullOrWhiteSpace(DNS)) output += $"DNS = {DNS}";
-            if (ListenPort.HasValue) output += $"ListenPort = {ListenPort}";
+            if(!string.IsNullOrWhiteSpace(DNS)) output += $"DNS = {DNS}\n";
+            if (ListenPort.HasValue) output += $"ListenPort = {ListenPort}\n";
+            
             foreach (var peer in Peers)
             {
                 output += "\n[Peer]\n";
