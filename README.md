@@ -16,6 +16,14 @@ Wireguard Config Helper is a lightweight CLI tool designed to make Wireguard VPN
 
 ## 🔧 Quick start
 
+### Requirements
+ - [WireGuard](https://www.wireguard.com/install/)
+   - On macOS: Using homebrew
+   - On Windows: Using Installer
+   - On Linux: Using package Manager
+
+### Steps
+
  1. Download latest release
 
 Linux / MacOS (bash / zsh)
