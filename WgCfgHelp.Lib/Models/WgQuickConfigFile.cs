@@ -19,6 +19,16 @@ namespace WgCfgHelp.Lib.Models
 
         public int? ListenPort { get; set; }
 
+        public int? Mtu { get; set; }
+        
+        public string? PreUp { get; set; }
+        
+        public string? PostUp { get; set; }
+        
+        public string? PreDown { get; set; }
+        
+        public string? PostDown { get; set; }
+        
         public List<WgQuickPeer> Peers { get; set; } = new List<WgQuickPeer>();
 
         public string ToConfigFileFormat()
@@ -28,6 +38,11 @@ namespace WgCfgHelp.Lib.Models
             output += $"PrivateKey = {PrivateKey}\n";
             output += $"# PublicKey = {PublicKey}\n";
             if(!string.IsNullOrWhiteSpace(DNS)) output += $"DNS = {DNS}\n";
+            if(Mtu is not null) output += $"MTU = {Mtu}\n";
+            if(!string.IsNullOrWhiteSpace(PreUp)) output += $"PreUp = {PreUp}\n";
+            if(!string.IsNullOrWhiteSpace(PreDown)) output += $"PreDown = {PreDown}\n";
+            if(!string.IsNullOrWhiteSpace(PostUp)) output += $"PostUp = {PostUp}\n";
+            if(!string.IsNullOrWhiteSpace(PostDown)) output += $"PostDown = {PostDown}\n";
             if (ListenPort.HasValue) output += $"ListenPort = {ListenPort}\n";
             
             foreach (var peer in Peers)

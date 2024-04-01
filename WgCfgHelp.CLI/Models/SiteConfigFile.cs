@@ -24,6 +24,16 @@ namespace WgCfgHelp.CLI.Models
 
         public string? AllowedIPs { get; set; }
 
+        public int? Mtu { get; set; }
+        
+        public string? PreUp { get; set; }
+        
+        public string? PostUp { get; set; }
+        
+        public string? PreDown { get; set; }
+        
+        public string? PostDown { get; set; }
+        
         public List<PeerConfig> Peers { get; set; } = new List<PeerConfig>();
 
         public static SiteConfigFile LoadFromFile(string path)

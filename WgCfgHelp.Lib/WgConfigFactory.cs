@@ -14,7 +14,12 @@ namespace WgCfgHelp.Lib
         public static WgQuickConfigFile GenServerConfig(
             string address,
             int port,
-            string privateKey, 
+            string privateKey,
+            string? preUp,
+            string? postUp,
+            string? preDown,
+            string? postDown,
+            int? mtu,
             List<WgQuickPeer> peers)
         {
             var wgExeInt = WgExeInterface.Create();
@@ -23,6 +28,11 @@ namespace WgCfgHelp.Lib
                 Address = address,
                 PrivateKey = privateKey,
                 ListenPort = port,
+                PreUp = preUp,
+                PostUp = postUp,
+                PreDown = preDown,
+                PostDown = postDown,
+                Mtu = mtu,
             };
             wgConfig.PublicKey = wgExeInt.GenPublicKey(wgConfig.PrivateKey);
             wgConfig.Peers = peers;

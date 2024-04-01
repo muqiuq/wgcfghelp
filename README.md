@@ -88,3 +88,7 @@ mkdir configfiles
 # or for help of specific verb
 ./wgcfghelp gen-site --help
 ```
+
+## Copyright
+
+"WireGuard" and the "WireGuard" logo are registered trademarks of Jason A. Donenfeld.

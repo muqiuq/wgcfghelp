@@ -109,6 +109,11 @@ namespace WgCfgHelp.CLI.Handler
             var serverConfig = WgConfigFactory.GenServerConfig(address,
                 configFile.Port!.Value,
                 configFile.PrivateKey!,
+                configFile.PreUp,
+                configFile.PostUp,
+                configFile.PreDown,
+                configFile.PostDown,
+                configFile.Mtu,
                 wgQuickPeers
             );
 
