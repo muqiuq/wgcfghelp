@@ -44,6 +44,10 @@ namespace WgCfgHelp.CLI.Handler
             {
                 port = parsedPort;
             }
+            else if(endpointParts.Length == 1)
+            {
+                endpoint = $"{endpoint}:{port}";
+            }
             var siteConfig = new SiteConfigFile()
             {
                 Endpoint = endpoint,

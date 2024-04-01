@@ -13,8 +13,9 @@ Wireguard Config Helper is a lightweight CLI tool designed to make Wireguard VPN
  - I was looking for a tool that consisted of a single binary (with no dependencies) and ran on any operating system.
  - Previously, I used Python scripts to accomplish this, but I wanted a tool I could share with other IT colleagues.
 
-## 🚀 Planned features
+## 🚀 Upcoming features
  - Sync configuration with MikroTik Router
+ - Generate site configuration from existing WgQuick configuration file
 
 ## 🚧 Still In development
 
