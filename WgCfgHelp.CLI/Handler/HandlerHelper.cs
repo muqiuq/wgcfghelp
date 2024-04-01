@@ -1,11 +1,35 @@
 using System.Net;
 using WgCfgHelp.Lib.IPHelpers;
+using WgCfgHelp.Lib.Models;
 
 namespace WgCfgHelp.CLI.Handler;
 
 public static class HandlerHelper
 {
 
+
+    public static bool TryGetConfigInFormat(string format, WgQuickConfigFile wgQuickConfigFile,
+        out string configFileContent, out int errorCode)
+    {
+        configFileContent = "";
+        errorCode = CliErrorCodes.SUCCESS;
+        if (format == "wg-quick")
+        {
+            configFileContent = wgQuickConfigFile.ToConfigFileFormat();
+        }
+        else if (format == "mikrotik")
+        {
+            configFileContent = wgQuickConfigFile.ToMikroTikFormat();
+        }
+        else
+        {
+            Console.WriteLine($"Invalid format {format}");
+            errorCode = CliErrorCodes.INVALID_FORMAT;
+            return false;
+        }
+        return true;
+    }
+    
     public static bool TrySaveToFileOrOutput(string fileName, 
         string basePath, bool outputToFile, bool force, string content,
         out int errorCode,

@@ -2,6 +2,7 @@ namespace WgCfgHelp.CLI;
 
 public static class CliErrorCodes
 {
+    public const int INVALID_FORMAT = 12;
     public const int FILE_ALREADY_EXISTS = 11;
     public const int OUTPUT_FOLDER_DOES_NOT_EXIST = 10;
     public const int MISSING_PRIVATE_KEY = 9;

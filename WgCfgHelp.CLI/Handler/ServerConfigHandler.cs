@@ -19,6 +19,8 @@ namespace WgCfgHelp.CLI.Handler
 
         public string Address { get; set; }
         
+        public string Format { get; set; }
+        
         public string ConfigFileName
         {
             get
@@ -40,13 +42,17 @@ namespace WgCfgHelp.CLI.Handler
             var forceOption = new Option<bool>(new string[] { "-f", "--Force" }, "force writing files");
             var basePathOption =
                 new Option<string>(new string[] { "-b", "--base-path" }, "write all files in this path");
-
+            var formatOption =
+                new Option<string>(new string[] { "--format" }, () => "wg-quick", "config file format: wg-quick or mikrotik");
+            
+            
             var command = new Command("gen-server", "generate client access file");
             command.AddArgument(configArg);
             command.AddArgument(addressArg);
             command.AddOption(basePathOption);
             command.AddOption(outputToFileOption);
             command.AddOption(forceOption);
+            command.AddOption(formatOption);
 
             command.Handler = CommandHandler.Create(
                 (ServerConfigArgs args) => handle(args));
@@ -81,6 +87,8 @@ namespace WgCfgHelp.CLI.Handler
                 Console.WriteLine($"Missing privateKey in config file");
                 return CliErrorCodes.MISSING_PRIVATE_KEY;
             }
+
+            args.Format = args.Format.ToLower().Trim();
             
             return GenerateServerAccessFile(configFile, $"{ipAddr}/{network!.Cidr}", args, network!);
         }
@@ -103,9 +111,16 @@ namespace WgCfgHelp.CLI.Handler
                 configFile.PrivateKey!,
                 wgQuickPeers
             );
+
+            if (!HandlerHelper.TryGetConfigInFormat(args.Format, serverConfig,
+                    out var configFileContent, out var errorCodeConfigFile))
+            {
+                return errorCodeConfigFile;
+            }
+            
             
             if (!HandlerHelper.TrySaveToFileOrOutput(
-                    address, args.BasePath, args.ToFile, args.Force, serverConfig.ToConfigFileFormat(), 
+                    address, args.BasePath, args.ToFile, args.Force, configFileContent, 
                     out var errorCode, out var filePathWithoutExtension))
             {
                 return errorCode;

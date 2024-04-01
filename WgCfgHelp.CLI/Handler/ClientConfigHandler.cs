@@ -34,6 +34,8 @@ namespace WgCfgHelp.CLI.Handler
         public int NumOfClients { get; set; }
         public bool QrCode { get; set; }
         public bool Force { get; set; }
+        
+        public string Format { get; set; }
         public bool DoNotUpdateSiteConfig { get; set; }
         public string BasePath { get; set; }
         
@@ -55,6 +57,8 @@ namespace WgCfgHelp.CLI.Handler
             var doNotUpdateSiteConfigOption = new Option<bool>(new string[] { "-d", "--do-not-update-site-config" }, () => false, "do not update site config");
             var basePathOption =
                 new Option<string>(new string[] { "-b", "--base-path" }, "write all files in this path");
+            var formatOption =
+                new Option<string>(new string[] { "--format" }, () => "wg-quick", "config file format: wg-quick or mikrotik");
 
             var command = new Command("gen-client", "generate client access file");
             command.AddArgument(configArg);
@@ -66,6 +70,7 @@ namespace WgCfgHelp.CLI.Handler
             command.AddOption(outputToFileOption);
             command.AddOption(forceOption);
             command.AddOption(doNotUpdateSiteConfigOption);
+            command.AddOption(formatOption);
 
             command.Handler = CommandHandler.Create(
                 async (ClientConfigArgs args) =>
@@ -99,8 +104,7 @@ namespace WgCfgHelp.CLI.Handler
                 var ipAddrForClient = IpHelper.GetNextIpAddress(ipAddr!, (uint)a);
 
                 var errorCodeSub = await GenerateClientAccessFile(configFile, ipAddrForClient.ToString(), 
-                    args.Preshared, args.ToFile, args.Force, args.QrCode, args.BasePath,
-                    network!);
+                    args, network!);
                 if (errorCodeSub != CliErrorCodes.SUCCESS)
                 {
                     return errorCodeSub;
@@ -117,11 +121,7 @@ namespace WgCfgHelp.CLI.Handler
 
         private static async Task<int> GenerateClientAccessFile(SiteConfigFile configFile,
             string address,
-            bool presharedKey,
-            bool outputToFile,
-            bool force,
-            bool genQrCode,
-            string basePath,
+            ClientConfigArgs args,
             IPNetwork2 network)
         {
             var clientAddr = $"{address}/{network.Cidr}";
@@ -130,7 +130,7 @@ namespace WgCfgHelp.CLI.Handler
 
             if (existingConfig != null)
             {
-                if (force)
+                if (args.Force)
                 {
                     Console.WriteLine($"{address} already exists. Overwriting");
                 }
@@ -146,7 +146,7 @@ namespace WgCfgHelp.CLI.Handler
                 configFile.Endpoint!,
                 configFile.AllowedIPs!,
                 configFile.Dns,
-            presharedKey);
+            args.Preshared);
 
             if (existingConfig == null)
             {
@@ -167,8 +167,14 @@ namespace WgCfgHelp.CLI.Handler
                 existingConfig.PublicKey = clientConfig.PublicKey;
             }
 
+            if (!HandlerHelper.TryGetConfigInFormat(args.Format, clientConfig,
+                    out var configFileContent, out var errorCodeConfigFile))
+            {
+                return errorCodeConfigFile;
+            }
+            
             if (!HandlerHelper.TrySaveToFileOrOutput(
-                    address, basePath, outputToFile, force, clientConfig.ToConfigFileFormat(), 
+                    address, args.BasePath, args.ToFile, args.Force, configFileContent, 
                     out var errorCode, out var filePathWithoutExtension))
             {
                 return errorCode;
@@ -176,13 +182,13 @@ namespace WgCfgHelp.CLI.Handler
 
             var filenamePic = $"{filePathWithoutExtension!}.png";
             
-            if (genQrCode)
+            if (args.QrCode)
             {
                 QRCodeGenerator qrGenerator = new QRCodeGenerator();
                 QRCodeData qrCodeData = qrGenerator.CreateQrCode(clientConfig.ToConfigFileFormat(), QRCodeGenerator.ECCLevel.Q);
                 var qrCode = new QRCode(qrCodeData);
                 var image = qrCode.GetGraphic(20);
-                if (File.Exists(filenamePic) && !force)
+                if (File.Exists(filenamePic) && !args.QrCode)
                 {
                     Console.WriteLine($"file {filenamePic} already exists");
                     return CliErrorCodes.FILE_ALREADY_EXISTS;

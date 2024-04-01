@@ -37,7 +37,20 @@ namespace WgCfgHelp.Lib.Models
             }
 
             return output;
+        }
 
+        public string ToMikroTikFormat()
+        {
+            string output = $"/interface/wireguard/add private-key=\"{PrivateKey}\"";
+            if (ListenPort.HasValue) output += $" listen-port=\"{ListenPort}\"";
+            output += "\n";
+            string interface_retrival_cmd = $"[/interface/wireguard/find where private-key=\"{PrivateKey}\"]";
+            output += $"/ip/address add interface={interface_retrival_cmd} address={Address}\n";
+            foreach (var peer in Peers)
+            {
+                output += peer.ToMikroTikFormat(interface_retrival_cmd) + "\n";
+            }
+            return output;
         }
 
     }

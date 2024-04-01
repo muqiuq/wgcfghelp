@@ -29,5 +29,25 @@ namespace WgCfgHelp.Lib.Models
             if(!string.IsNullOrWhiteSpace(Endpoint)) output += $"Endpoint = {Endpoint}\n";
             return output;
         }
+
+        public string ToMikroTikFormat(string mikrotikInterfaceName)
+        {
+            string output = "/interface/wireguard/peers/add";
+            output += $" interface={mikrotikInterfaceName}" +
+                      $" public-key=\"{PublicKey}\" allowed-address=\"{AllowedIPs}\"";
+            if(!string.IsNullOrWhiteSpace(PresharedKey)) output += $" preshared-key=\"{PresharedKey}\"";
+            if(!string.IsNullOrWhiteSpace(Comment)) output += $" comment=\"{Comment.Replace("\"", " ")}\"";
+            if (!string.IsNullOrWhiteSpace(Endpoint))
+            {
+                var endpointParts = Endpoint.Split(":");
+                output += $" endpoint-address=\"{endpointParts[0]}\"";
+                if (endpointParts.Length == 2)
+                {
+                    output += $" endpoint-port=\"{endpointParts[1]}\"";
+                }
+            }
+
+            return output;
+        }
     }
 }
