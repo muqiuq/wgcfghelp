@@ -97,6 +97,7 @@ namespace WgCfgHelp.CLI.Handler
             for (int a = 0; a < args.NumOfClients; a++)
             {
                 var ipAddrForClient = IpHelper.GetNextIpAddress(ipAddr!, (uint)a);
+
                 var errorCodeSub = await GenerateClientAccessFile(configFile, ipAddrForClient.ToString(), 
                     args.Preshared, args.ToFile, args.Force, args.QrCode, args.BasePath,
                     network!);
@@ -125,21 +126,46 @@ namespace WgCfgHelp.CLI.Handler
         {
             var clientAddr = $"{address}/{network.Cidr}";
 
-            var clientConfig = WgConfigFactory.GenClientConfig(clientAddr,
+            var existingConfig = configFile.Peers.FirstOrDefault(p => p.Address == clientAddr);
+
+            if (existingConfig != null)
+            {
+                if (force)
+                {
+                    Console.WriteLine($"{address} already exists. Overwriting");
+                }
+                else
+                {
+                    Console.WriteLine($"{address} already exists. Skipping");
+                    return CliErrorCodes.SUCCESS;
+                }
+            }
+            
+            var clientConfig = WgConfigFactory.BuildNewClientConfig(clientAddr,
                 configFile.PublicKey!,
                 configFile.Endpoint!,
                 configFile.AllowedIPs!,
                 configFile.Dns,
             presharedKey);
-            
-            configFile.Peers.Add(new PeerConfig()
+
+            if (existingConfig == null)
             {
-                AllowedIPs = clientConfig.Peers.First()?.AllowedIPs,
-                Name = clientAddr,
-                Address = clientAddr,
-                PresharedKey = clientConfig.Peers.First()?.PresharedKey,
-                PublicKey = clientConfig.PublicKey,
-            });
+                configFile.Peers.Add(new PeerConfig()
+                {
+                    AllowedIPs = clientConfig.Peers.First()?.AllowedIPs,
+                    Name = clientAddr,
+                    Address = clientAddr,
+                    PresharedKey = clientConfig.Peers.First()?.PresharedKey,
+                    PublicKey = clientConfig.PublicKey,
+                });
+            }
+            else
+            {
+                existingConfig.AllowedIPs = clientConfig.Peers.First()?.AllowedIPs;
+                existingConfig.Address = clientAddr;
+                existingConfig.PresharedKey = clientConfig.Peers.First()?.PresharedKey;
+                existingConfig.PublicKey = clientConfig.PublicKey;
+            }
 
             if (!HandlerHelper.TrySaveToFileOrOutput(
                     address, basePath, outputToFile, force, clientConfig.ToConfigFileFormat(), 

@@ -29,7 +29,7 @@ namespace WgCfgHelp.Lib
             return wgConfig;
         }
         
-        public static WgQuickConfigFile GenClientConfig(
+        public static WgQuickConfigFile BuildNewClientConfig(
             string address,
             string publicKey, 
             string endpoint, 
@@ -59,6 +59,7 @@ namespace WgCfgHelp.Lib
             wgConfig.Peers.Add(wgQuickPeer);
             return wgConfig;
         }
+        
 
         public static WgKeyPair GenKeyPair()
         {
