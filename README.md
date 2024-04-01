@@ -3,16 +3,22 @@
 Wireguard Config Helper is a lightweight CLI tool designed to make Wireguard VPN setup easy and efficient, enabling bulk configuration creation for deployments of any size.
 
 ## ⭐ Features
- - Create and use site config file
- - Generate single or multiple client access configuration
+ - Manage RoadWarrior WireGuard configuration in a single YAML file
+ - Bulk client access configuration generator
  - Generate QR Codes images alongside client config files
- - *Upcomming: Generate MirkoTik Commands*
-
+ - Outputs *[WgQuick](https://www.man7.org/linux/man-pages/man8/wg-quick.8.html) config files* or *MirkoTik commands*
 
 ## 🧸 Motivation
  - I needed to create multiple client access configuration files.
- - I was looking for a tool that consisted of a single binary and ran on any operating system.
+ - I was looking for a tool that consisted of a single binary (with no dependencies) and ran on any operating system.
  - Previously, I used Python scripts to accomplish this, but I wanted a tool I could share with other IT colleagues.
+
+## 🚀 Planned features
+ - Sync configuration with MikroTik Router
+
+## 🚧 Project Status and Contribution
+
+This project is currently in development and **not yet ready for production use**. If you are excited about what we're building and want to contribute, we warmly welcome anyone to **join our effort**! 
 
 ## 🔧 Quick start
 
@@ -20,7 +26,7 @@ Wireguard Config Helper is a lightweight CLI tool designed to make Wireguard VPN
  - [WireGuard](https://www.wireguard.com/install/)
    - On macOS: Using homebrew
    - On Windows: Using Installer
-   - On Linux: Using package Manager
+   - On Linux: Using package manager
 
 ### Steps
 
@@ -69,3 +75,11 @@ mkdir configfiles
 ./wgcfghelp gen-server ./CompanyXYRoadwarrior.yaml 192.168.9.1 -o
 ```
  6. Done. The files can now be distributed
+
+## ⌨️ Usage
+```bash
+./wgcfghelp --help
+
+# or for help of specific verb
+./wgcfghelp gen-site --help
+```
