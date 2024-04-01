@@ -36,10 +36,12 @@ Linux / MacOS (bash / zsh)
 ```bash
 # Linux arm64
 curl -L https://github.com/muqiuq/wgcfghelp/releases/latest/download/WgCfgHelp.CLI.linux-arm64 -o wgcfghelp && chmod +x wgcfghelp
-
+```
+```bash
 # Linux x64
 curl -L https://github.com/muqiuq/wgcfghelp/releases/latest/download/WgCfgHelp.CLI.linux-x64 -o wgcfghelp && chmod +x wgcfghelp
-
+```
+```bash
 # MacOs x64 (works for arm64 too on macOS Sonoma 14.x)
 curl -L https://github.com/muqiuq/wgcfghelp/releases/latest/download/WgCfgHelp.CLI.osx-x64  -o wgcfghelp && chmod +x wgcfghelp
 ```
@@ -48,7 +50,9 @@ Windows (PowerShell)
 ```powershell
 # Windows x64
 Invoke-WebRequest -Uri "https://github.com/muqiuq/wgcfghelp/releases/latest/download/WgCfgHelp.CLI.x64.exe" -OutFile "wgcfghelp.exe"
+```
 
+```powershell
 # Windows x64
 Invoke-WebRequest -Uri "https://github.com/muqiuq/wgcfghelp/releases/latest/download/WgCfgHelp.CLI.arm64.exe" -OutFile "wgcfghelp.exe"
 ```
