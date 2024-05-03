@@ -50,12 +50,12 @@ curl -L https://github.com/muqiuq/wgcfghelp/releases/latest/download/WgCfgHelp.C
 Windows (PowerShell)
 ```powershell
 # Windows x64
-Invoke-WebRequest -Uri "https://github.com/muqiuq/wgcfghelp/releases/latest/download/WgCfgHelp.CLI.x64.exe" -OutFile "wgcfghelp.exe"
+$ProgressPreference = 'SilentlyContinue'; Invoke-WebRequest -Uri "https://github.com/muqiuq/wgcfghelp/releases/latest/download/WgCfgHelp.CLI.x64.exe" -OutFile "wgcfghelp.exe"; $ProgressPreference = 'Continue';
 ```
 
 ```powershell
-# Windows x64
-Invoke-WebRequest -Uri "https://github.com/muqiuq/wgcfghelp/releases/latest/download/WgCfgHelp.CLI.arm64.exe" -OutFile "wgcfghelp.exe"
+# Windows arm64
+$ProgressPreference = 'SilentlyContinue'; Invoke-WebRequest -Uri "https://github.com/muqiuq/wgcfghelp/releases/latest/download/WgCfgHelp.CLI.arm64.exe" -OutFile "wgcfghelp.exe"; $ProgressPreference = 'Continue';
 ```
 
  2. Create new site (this will create a yaml file CompanyXYRoadwarrior.yaml)
