@@ -15,7 +15,7 @@ namespace WgCfgHelp.Lib
             "wg",
             "C:\\Program Files\\WireGuard\\wg.exe",
             "/opt/homebrew/bin/wg",
-            "/usb/bin/wg"
+            "/usr/bin/wg"
         };
 
 
